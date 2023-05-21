@@ -2,7 +2,9 @@ import * as THREE from "https://cdn.skypack.dev/three@0.136.0";
 import { OrbitControls } from "https://cdn.skypack.dev/three@0.136.0/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "https://cdn.skypack.dev/three@0.136.0/examples/jsm/loaders/GLTFLoader";
 
-let scene, camera, renderer, light, spaceship, meteors, aliens, controls;
+let scene, camera, renderer, light, spaceship, controls;
+let meteors = [];
+let aliens = [];
 let bullets = [];
 const keys = {
   ArrowUp: false,
@@ -34,7 +36,7 @@ function init() {
     light = new THREE.AmbientLight(0xffffff, 10);
     scene.add(light);
 
-    var directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+    var directionalLight = new THREE.DirectionalLight(0xffffff, 5);
     directionalLight.position.set(1, 1, 1).normalize();
     scene.add(directionalLight);
 
@@ -66,29 +68,67 @@ function init() {
   };
   
   update();
-    });
+  });
 
-    // Создаем метеориты
-    meteors = [];
-    const meteorGeometry = new THREE.BoxGeometry(1, 1, 2);
-    const meteorMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    for (let i = 0; i < 5; i++) {
-        const meteor = new THREE.Mesh(meteorGeometry, meteorMaterial);
-        meteor.position.set(Math.random() * 20 - 10,Math.random() * 10 + 30, 0);
-        meteors.push(meteor);
-        scene.add(meteor);
-    }
+}
 
-    // Создаем инопланетян
-    aliens = [];
-    const alienGeometry = new THREE.BoxGeometry(1, 1, 2);
-    const alienMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    for (let i = 0; i < 2; i++) {
-        const alien = new THREE.Mesh(alienGeometry, alienMaterial);
-        alien.position.set(Math.random() * 20 - 10,Math.random() * 15 + 30, 0);
-        aliens.push(alien);
-        scene.add(alien);
-    }
+const maxMeteors = 5; 
+const maxAliens = 2;
+
+function generateMeteor(){
+
+  if (meteors.length >= maxMeteors) {
+    return; // Если достигнуто максимальное количество метеоритов, прекратить создание новых
+  }
+
+   // Создаем метеориты
+   const meteorLoader = new GLTFLoader();
+     meteorLoader.load("http://localhost:8080/meteor.gltf", function (gltf) {
+       const meteor = gltf.scene;
+       meteor.position.set( Math.random() * 20 - 10, 20, 0);
+       meteor.rotation.set(Math.random() ,Math.random() , Math.random());
+       scene.add(meteor);
+       meteors.push(meteor);
+     });
+
+}
+
+function generateAlien(){
+
+  if (aliens.length >= maxAliens) {
+    return; // Если достигнуто максимальное количество пришельцев, прекратить создание новых
+  }
+
+  const alienLoader = new GLTFLoader();
+    alienLoader.load("http://localhost:8080/alien.gltf", function (gltf) {
+      const alien = gltf.scene;
+      alien.position.set(Math.random() * 20 - 10, 20, 0);
+      alien.rotation.set(0 ,0 , Math.PI);
+      scene.add(alien);
+      aliens.push(alien);
+      const animations = gltf.animations;
+  
+      // Создайте объект анимации Three.js
+      const mixer = new THREE.AnimationMixer(alien);
+      
+      // Добавьте все анимации к объекту анимации
+      animations.forEach((animation) => {
+        const action = mixer.clipAction(animation);
+        action.play();
+      });
+    
+      const clock = new THREE.Clock();
+    
+      const update = () => {
+        const deltaTime = clock.getDelta();
+        requestAnimationFrame(update);
+        mixer.update(deltaTime);
+        renderer.render(scene, camera);
+      };
+      
+      update();
+      });
+    
 }
 
 let lastShotTime = 0;
@@ -104,11 +144,34 @@ function handleShoot() {
     scene.add(bullet);
 
     function animateBullet() {
-      bullet.position.y += 0.1;
+      bullet.position.y += 0.5;
       if (bullet.position.y > 10) {
         scene.remove(bullet);
       } else {
         requestAnimationFrame(animateBullet);
+
+        // Check for collision with meteors
+meteors.forEach((meteor) => {
+  if (bullet.position.distanceTo(meteor.position) < 1) {
+    // Remove the meteor and bullet when they collide
+    scene.remove(meteor);
+    scene.remove(bullet);
+    meteors.splice(meteors.indexOf(meteor), 1);
+    bullets.splice(bullets.indexOf(bullet), 1);
+    updateScore(10); // Increase the score by 10 points
+  }
+});
+// Check for collision with aliens
+aliens.forEach((alien) => {
+  if (bullet.position.distanceTo(alien.position) < 1) {
+    // Remove the alien and bullet when they collide
+    scene.remove(alien);
+    scene.remove(bullet);
+    aliens.splice(aliens.indexOf(alien), 1);
+    bullets.splice(bullets.indexOf(bullet), 1);
+    updateScore(20); // Increase the score by 20 points
+  }
+});
       }
     }
 
@@ -170,6 +233,20 @@ function updateSpaceshipPosition() {
 }
 }
 
+function startGeneration() {
+  setInterval(function() {
+    console.log(meteors);
+    if(Math.random()<0.4){
+      generateMeteor();
+    }
+
+    if(Math.random()<0.2){
+      generateAlien();
+    }
+   // console.log("gen");
+  }, 2000); // Запуск генерации каждую секунду (интервал в миллисекундах)
+}
+
 function animate() {
     requestAnimationFrame(animate);
 
@@ -183,53 +260,28 @@ function animate() {
 
     meteors.forEach((meteor) => {
         meteor.position.y -= 0.1;
-        if (meteor.position.y < -10) {
-            meteor.position.set(Math.random() * 20 - 10,Math.random() * 10 + 10, 0);
+        if (meteor.position.y < -15) {
+          //scene.remove(meteor);
+          meteor.position.set( Math.random() * 20 - 10, 20, 0);
+          meteor.rotation.set(Math.random() ,Math.random() , Math.random());
+         // meteors.splice(meteors.indexOf(meteor), 1);
         }
     });
 
     aliens.forEach((alien) => {
         alien.position.y -= 0.05;
-        if (alien.position.y < -10) {
-            alien.position.set(Math.random() * 20 - 10,Math.random() * 10 + 10 , 0);
+        if (alien.position.y < -15) {
+          //scene.remove(alien);
+          alien.position.set(Math.random() * 20 - 10, 20, 0);
+          alien.rotation.set(0 ,0 , Math.PI);
+         // aliens.splice(aliens.indexOf(alien), 1);
         }
     });
 
-     // Move bullets
-  bullets.forEach((bullet) => {
-    bullet.position.y += 0.1;
-    if (bullet.position.y > 10) {
-      // Remove the bullet when it goes out of bounds
-      scene.remove(bullet);
-      bullets.splice(bullets.indexOf(bullet), 1);
-    } else {
-      // Check for collision with meteors
-      meteors.forEach((meteor) => {
-        if (bullet.position.distanceTo(meteor.position) < 1) {
-          // Remove the meteor and bullet when they collide
-          scene.remove(meteor);
-          scene.remove(bullet);
-          meteors.splice(meteors.indexOf(meteor), 1);
-          bullets.splice(bullets.indexOf(bullet), 1);
-        }
-      });
-
-      // Check for collision with aliens
-      aliens.forEach((alien) => {
-        if (bullet.position.distanceTo(alien.position) < 1) {
-          // Remove the alien and bullet when they collide
-          scene.remove(alien);
-          scene.remove(bullet);
-          aliens.splice(aliens.indexOf(alien), 1);
-          bullets.splice(bullets.indexOf(bullet), 1);
-        }
-      });
-    }
-  });
 
     drawScore();
     renderer.render(scene, camera);
 }
-
+startGeneration();
 init();
 animate();
