@@ -6,6 +6,10 @@ let scene, camera, renderer, light, spaceship, controls;
 let meteors = [];
 let aliens = [];
 let bullets = [];
+
+const maxMeteors = 5; 
+const maxAliens = 2;
+
 const keys = {
   ArrowUp: false,
   ArrowDown: false,
@@ -45,6 +49,7 @@ function init() {
         spaceship = gltf.scene;
         spaceship.position.set(0,(-6), 0);
         spaceship.scale.set(1, 1, 1);
+        spaceship.hp = 30;
         scene.add(spaceship);
           // Получите анимации из glTF
   const animations = gltf.animations;
@@ -69,41 +74,38 @@ function init() {
   
   update();
   });
-
+  
+  generateMeteor();
+  generateAlien();
 }
 
-const maxMeteors = 5; 
-const maxAliens = 2;
 
 function generateMeteor(){
 
-  if (meteors.length >= maxMeteors) {
-    return; // Если достигнуто максимальное количество метеоритов, прекратить создание новых
-  }
-
    // Создаем метеориты
    const meteorLoader = new GLTFLoader();
+   for (let i = meteors.length; i < maxMeteors; i++){
      meteorLoader.load("http://localhost:8080/meteor.gltf", function (gltf) {
        const meteor = gltf.scene;
-       meteor.position.set( Math.random() * 20 - 10, 20, 0);
-       meteor.rotation.set(Math.random() ,Math.random() , Math.random());
+       meteor.position.set(null);
+       meteor.rotation.set(Math.random()* 360 ,Math.random() * 360, Math.random()* 360);
+       meteor.hp = 30; // Присваиваем здоровье метеориту
        scene.add(meteor);
        meteors.push(meteor);
      });
-
+    }
 }
 
 function generateAlien(){
 
-  if (aliens.length >= maxAliens) {
-    return; // Если достигнуто максимальное количество пришельцев, прекратить создание новых
-  }
-
+  for (let b = aliens.length; b < maxAliens; b++){
   const alienLoader = new GLTFLoader();
     alienLoader.load("http://localhost:8080/alien.gltf", function (gltf) {
       const alien = gltf.scene;
-      alien.position.set(Math.random() * 20 - 10, 20, 0);
+     // alien.position.set(Math.random() * 20 - 10, 20, 0);
+      alien.position.set(null);
       alien.rotation.set(0 ,0 , Math.PI);
+      alien.hp = 50;
       scene.add(alien);
       aliens.push(alien);
       const animations = gltf.animations;
@@ -128,11 +130,59 @@ function generateAlien(){
       
       update();
       });
-    
+  }
+}
+
+let lastShipHitTime = 0; // Время последнего попадания в корабль
+
+function handleCollisions() {
+  // Проверка столкновений с метеоритами
+  meteors.forEach((meteor) => {
+    if (
+      spaceship.position.distanceTo(meteor.position) < 4 && Date.now() - lastShipHitTime > 2000 // Задержка в 100 миллисекунд
+    ) {
+      meteor.position.set(null);
+      meteor.rotation.set(Math.random() * 360, Math.random() * 360, Math.random() * 360);
+      currentMeteorIndex = meteors.indexOf(meteor);
+      lastShipHitTime = Date.now();
+      spaceship.hp -= 10;
+      updateSpaceshipHP(spaceship.hp);
+      console.log(spaceship.hp);
+      if (spaceship.hp <= 0) {
+        gameOver();
+      }
+    }
+  });
+
+  // Проверка столкновений с инопланетянами
+  aliens.forEach((alien) => {
+    if (
+      spaceship.position.distanceTo(alien.position) < 4 && Date.now() - lastShipHitTime > 2000 // Задержка в 100 миллисекунд
+    ) {
+      alien.position.set(null);
+      alien.rotation.set(0, 0, Math.PI);
+      currentAlienIndex = aliens.indexOf(alien);
+      lastShipHitTime = Date.now();
+      spaceship.hp -= 10;
+      updateSpaceshipHP();
+      console.log(spaceship.hp);
+      if (spaceship.hp <= 0) {
+        gameOver();
+      }
+    }
+  });
+}
+let End = false;
+function gameOver() {
+  scene.remove(spaceship);
+  spaceship.position.set(null);
+  End = true;
 }
 
 let lastShotTime = 0;
 const shootDelay = 200; // Delay between shots in milliseconds
+let lastMeteorHitTime = 0; // Время последнего попадания в метеорит
+let lastAlienHitTime = 0; // Время последнего попадания в алиена
 
 function handleShoot() {
   const currentTime = Date.now();
@@ -151,29 +201,47 @@ function handleShoot() {
         requestAnimationFrame(animateBullet);
 
         // Check for collision with meteors
-meteors.forEach((meteor) => {
-  if (bullet.position.distanceTo(meteor.position) < 1) {
-    // Remove the meteor and bullet when they collide
-    scene.remove(meteor);
-    scene.remove(bullet);
-    meteors.splice(meteors.indexOf(meteor), 1);
-    bullets.splice(bullets.indexOf(bullet), 1);
-    updateScore(10); // Increase the score by 10 points
-  }
-});
+  meteors.forEach((meteor) => {
+      if (
+        bullet.position.distanceTo(meteor.position) < 2 &&
+        Date.now() - lastMeteorHitTime > 100 // Задержка в 100 миллисекунд
+      ) {
+        lastMeteorHitTime = Date.now();
+        bullets.splice(bullets.indexOf(bullet), 1);
+        scene.remove(bullet);
+        meteor.hp -= 10;
+        console.log(meteor.hp);
+        if (meteor.hp <= 0) {
+          meteor.position.set(null);
+          meteor.rotation.set(Math.random() * 360, Math.random() * 360, Math.random() * 360);
+          currentMeteorIndex = meteors.indexOf(meteor);
+          updateScore(10); // Увеличиваем счет на 10 очков
+        }
+      }
+    });
+
 // Check for collision with aliens
 aliens.forEach((alien) => {
-  if (bullet.position.distanceTo(alien.position) < 1) {
-    // Remove the alien and bullet when they collide
-    scene.remove(alien);
-    scene.remove(bullet);
-    aliens.splice(aliens.indexOf(alien), 1);
+  if (
+    bullet.position.distanceTo(alien.position) < 2 &&
+    Date.now() - lastAlienHitTime > 100 // Задержка в 100 миллисекунд
+  ) {
+    lastAlienHitTime = Date.now();
     bullets.splice(bullets.indexOf(bullet), 1);
-    updateScore(20); // Increase the score by 20 points
+    scene.remove(bullet);
+    alien.hp -= 10;
+    console.log(alien.hp);
+    if (alien.hp <= 0) {
+      alien.position.set(null);
+      alien.rotation.set(0, 0, Math.PI);
+      currentAlienIndex = aliens.indexOf(alien);
+      updateScore(20); // Увеличиваем счет на 20 очков
+    }
   }
 });
-      }
-    }
+
+   }
+ }
 
     animateBullet();
     lastShotTime = currentTime;
@@ -232,26 +300,49 @@ function updateSpaceshipPosition() {
   }
 }
 }
+let lastGenerationTime = 0;
+let currentMeteorIndex = 0;
+let currentAlienIndex = 0;
 
-function startGeneration() {
-  setInterval(function() {
-    console.log(meteors);
-    if(Math.random()<0.4){
-      generateMeteor();
+function reGeneration() {
+
+  const generateObjects = (timestamp) => {
+    if (timestamp - lastGenerationTime > 1000) {
+      if (currentMeteorIndex < meteors.length) {
+        const meteor = meteors[currentMeteorIndex];
+        if (meteor.position.x === null) {
+          meteor.position.y -=0.2;
+          meteor.position.set(Math.random() * 20 - 10, 20, 0);
+          meteor.rotation.set(Math.random() * 360, Math.random() * 360, Math.random() * 360);
+          currentMeteorIndex++;
+        }
+      }else currentMeteorIndex=0;
+      
+
+      if (currentAlienIndex < aliens.length) {
+        const alien = aliens[currentAlienIndex];
+        if (alien.position.x === null) {
+          alien.position.y -=0.1;
+          alien.position.set(Math.random() * 20 - 10, 20, 0);
+          alien.rotation.set(0, 0, Math.PI);
+          currentAlienIndex++;
+        }
+      }else currentAlienIndex=0;
+
+      lastGenerationTime = timestamp;
     }
 
-    if(Math.random()<0.2){
-      generateAlien();
-    }
-   // console.log("gen");
-  }, 2000); // Запуск генерации каждую секунду (интервал в миллисекундах)
+    requestAnimationFrame(generateObjects);
+  };
+
+  requestAnimationFrame(generateObjects);
 }
 
 function animate() {
     requestAnimationFrame(animate);
 
     updateSpaceshipPosition();  
-
+    
     ctx.clearRect(0, 0, canvasOverlay.width, canvasOverlay.height); 
 
     if (keys.Space) {
@@ -259,29 +350,32 @@ function animate() {
     }
 
     meteors.forEach((meteor) => {
-        meteor.position.y -= 0.1;
-        if (meteor.position.y < -15) {
-          //scene.remove(meteor);
-          meteor.position.set( Math.random() * 20 - 10, 20, 0);
-          meteor.rotation.set(Math.random() ,Math.random() , Math.random());
-         // meteors.splice(meteors.indexOf(meteor), 1);
-        }
+      meteor.position.y -=0.2;
+      if (meteor.position.y <= -15) {
+        meteor.position.set(null);
+        meteor.rotation.set(Math.random() * 360, Math.random() * 360, Math.random() * 360);
+        currentMeteorIndex = meteors.indexOf(meteor);
+      }
     });
 
     aliens.forEach((alien) => {
-        alien.position.y -= 0.05;
-        if (alien.position.y < -15) {
-          //scene.remove(alien);
-          alien.position.set(Math.random() * 20 - 10, 20, 0);
-          alien.rotation.set(0 ,0 , Math.PI);
-         // aliens.splice(aliens.indexOf(alien), 1);
-        }
+      alien.position.y -=0.1;
+      if (alien.position.y <= -15) {
+        alien.position.set(null);
+        alien.rotation.set(0, 0, Math.PI);
+        currentAlienIndex = aliens.indexOf(alien);
+      }
     });
 
-
+    handleCollisions();
+    drawDistance();
     drawScore();
+    drawPlayerHP();
+    if(End == true)
+    gameOverInt();
     renderer.render(scene, camera);
 }
-startGeneration();
+
+reGeneration();
 init();
 animate();
