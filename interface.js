@@ -8,10 +8,12 @@ let one = true;
 function initInterface() {
   // Создание и размещение Canvas
   canvasOverlay = document.getElementById('canvas-overlay');
-  canvasOverlay.width = window.innerWidth;
-  canvasOverlay.height = window.innerHeight;
+  canvasOverlay.width = 1920;
+  canvasOverlay.height = 1080;
   ctx = canvasOverlay.getContext('2d');
 }
+
+
 
 function updateScore(bonus) {
   score = bonus + score;
@@ -54,6 +56,8 @@ function gameOverInt() {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('GAME OVER', canvasOverlay.width / 2, canvasOverlay.height / 2);
+  ctx.font = '30px Orbitron';
+  ctx.fillText('Press f5 to restart', canvasOverlay.width / 2,canvasOverlay.height / 2 + 190);
 }
 
 

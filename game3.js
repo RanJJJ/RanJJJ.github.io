@@ -7,6 +7,7 @@ let meteors = [];
 let aliens = [];
 let bullets = [];
 
+
 const maxMeteors = 5; 
 const maxAliens = 2;
 
@@ -21,14 +22,29 @@ const keys = {
 function init() {
     scene = new THREE.Scene();
     initInterface();
-    camera = new THREE.OrthographicCamera(window.innerWidth / -100, window.innerWidth / 100, window.innerHeight / 100, window.innerHeight / -100, 1, 1000);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(1920, 1080);
+
+    function updateRendererSize() {
+      const { width, height } = gameContainer.getBoundingClientRect();
+      renderer.setSize(width, height);
+    }
+    
+    updateRendererSize();
+    gameContainer.appendChild(renderer.domElement);
+    window.addEventListener('resize', updateRendererSize);
+
+    document.getElementById('game-container').appendChild(renderer.domElement);
+    
+    const canvas = document.querySelector('canvas[data-engine="three.js r136"]');
+    canvas.style.zIndex = "1";
+    canvas.style.position = "relative";
+
+    camera = new THREE.OrthographicCamera(1920 / -100, 1920 / 100, 1080 / 100, 1080 / -100, 1, 1000);
     camera.position.set(0, 0, 10);
 
-    renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.getElementById('game-container').appendChild(renderer.domElement);
-
-    renderer.setClearColor(0x000000, 1);
+    renderer.setClearColor(0x000000,0);
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enabled = false;
 
@@ -44,42 +60,44 @@ function init() {
     directionalLight.position.set(1, 1, 1).normalize();
     scene.add(directionalLight);
 
-    const loader = new GLTFLoader();
-    loader.load('http://localhost:8080/spaceship.gltf', function(gltf) {
-        spaceship = gltf.scene;
-        spaceship.position.set(0,(-6), 0);
-        spaceship.scale.set(1, 1, 1);
-        spaceship.hp = 30;
-        scene.add(spaceship);
-          // Получите анимации из glTF
-  const animations = gltf.animations;
-  
-  // Создайте объект анимации Three.js
-  const mixer = new THREE.AnimationMixer(spaceship);
-  
-  // Добавьте все анимации к объекту анимации
-  animations.forEach((animation) => {
-    const action = mixer.clipAction(animation);
-    action.play();
-  });
-
-  const clock = new THREE.Clock();
-
-  const update = () => {
-    const deltaTime = clock.getDelta();
-    requestAnimationFrame(update);
-    mixer.update(deltaTime);
-    renderer.render(scene, camera);
-  };
-  
-  update();
-  });
-  
+  generateSpaceship();
   generateMeteor();
   generateAlien();
 }
 
+function generateSpaceship(){
+  const loader = new GLTFLoader();
+  loader.load('http://localhost:8080/spaceship.gltf', function(gltf) {
+      spaceship = gltf.scene;
+      spaceship.position.set(0,(-6), 0);
+      spaceship.scale.set(1, 1, 1);
+      spaceship.hp = 30;
+      scene.add(spaceship);
+        // Получите анимации из glTF
+const animations = gltf.animations;
 
+// Создайте объект анимации Three.js
+const mixer = new THREE.AnimationMixer(spaceship);
+
+// Добавьте все анимации к объекту анимации
+animations.forEach((animation) => {
+  const action = mixer.clipAction(animation);
+  action.play();
+});
+
+const clock = new THREE.Clock();
+
+const update = () => {
+  const deltaTime = clock.getDelta();
+  requestAnimationFrame(update);
+  mixer.update(deltaTime);
+  renderer.render(scene, camera);
+};
+
+update();
+});
+
+}
 function generateMeteor(){
 
    // Создаем метеориты
@@ -135,11 +153,13 @@ function generateAlien(){
 
 let lastShipHitTime = 0; // Время последнего попадания в корабль
 
+let flashCount = 0; // Counter for flash iterations
+
 function handleCollisions() {
   // Проверка столкновений с метеоритами
   meteors.forEach((meteor) => {
     if (
-      spaceship.position.distanceTo(meteor.position) < 4 && Date.now() - lastShipHitTime > 2000 // Задержка в 100 миллисекунд
+      spaceship.position.distanceTo(meteor.position) < 4 && Date.now() - lastShipHitTime > 2000 // Задержка в 2 секунды
     ) {
       meteor.position.set(null);
       meteor.rotation.set(Math.random() * 360, Math.random() * 360, Math.random() * 360);
@@ -150,6 +170,9 @@ function handleCollisions() {
       console.log(spaceship.hp);
       if (spaceship.hp <= 0) {
         gameOver();
+      } else {
+        flashCount = 0; // Reset the flash counter
+        flashSpaceship(); // Call the function to flash the spaceship
       }
     }
   });
@@ -157,7 +180,7 @@ function handleCollisions() {
   // Проверка столкновений с инопланетянами
   aliens.forEach((alien) => {
     if (
-      spaceship.position.distanceTo(alien.position) < 4 && Date.now() - lastShipHitTime > 2000 // Задержка в 100 миллисекунд
+      spaceship.position.distanceTo(alien.position) < 4 && Date.now() - lastShipHitTime > 2000 // Задержка в 2 секунды
     ) {
       alien.position.set(null);
       alien.rotation.set(0, 0, Math.PI);
@@ -168,10 +191,25 @@ function handleCollisions() {
       console.log(spaceship.hp);
       if (spaceship.hp <= 0) {
         gameOver();
+      } else {
+        flashCount = 0; // Reset the flash counter
+        flashSpaceship(); // Call the function to flash the spaceship
       }
     }
   });
 }
+
+// Функция для мигания корабля
+function flashSpaceship() {
+  spaceship.visible = !spaceship.visible;
+  flashCount++;
+
+  if (flashCount < 4) { // Repeat the flash 4 times (8 iterations)
+    setTimeout(flashSpaceship, 500); // Delay for 500ms between each flash iteration
+  }
+}
+
+
 let End = false;
 function gameOver() {
   scene.remove(spaceship);
@@ -366,7 +404,6 @@ function animate() {
         currentAlienIndex = aliens.indexOf(alien);
       }
     });
-
     handleCollisions();
     drawDistance();
     drawScore();

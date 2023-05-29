@@ -2,15 +2,33 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>3D Game</title>
+    <title>SpaceHero</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="styles3.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Orbitron">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Orbitron">dw
 </head>
 <body>
-    <div id="game-container"></div>
-    <canvas id="canvas-overlay"></canvas>
-    <script src="http://localhost:8080/interface.js"></script>
-    <script type="module" src="http://localhost:8080/game3.js"></script>
+    <header class="header">
+        <img class="logotipe" src="logo.png" alt="Logo">
+    </header>
+    <div class="container">
+        <img class="left-image" src="boka.png" alt="Left Image">
+        <div id="game-container" > 
+            <video id="video-background" autoplay muted loop>
+                <source src="space3.mp4" type="video/mp4">
+            </video>
+            <canvas id="canvas-overlay"></canvas>
+            <button id="fullscreen-button" class="fullscreen-button" title="Развернуть на весь экран"></button>
+        </div>
+        <img class="right-image" src="boka.png" alt="Right Image">
+    </div>
+    <footer class="footer">
+      <div id="description">
+        <img class="downtipe" src="description.png" alt="Description">
+      </div>
+    </footer>
+    <script src="fullscreen.js"></script>
+    <script src="interface.js"></script>
+    <script type="module" src="game3.js"></script>
 </body>
 </html>
