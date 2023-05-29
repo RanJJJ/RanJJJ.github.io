@@ -67,7 +67,7 @@ function init() {
 
 function generateSpaceship(){
   const loader = new GLTFLoader();
-  loader.load('http://localhost:8080/spaceship.gltf', function(gltf) {
+  loader.load('spaceship.gltf', function(gltf) {
       spaceship = gltf.scene;
       spaceship.position.set(0,(-6), 0);
       spaceship.scale.set(1, 1, 1);
@@ -103,7 +103,7 @@ function generateMeteor(){
    // Создаем метеориты
    const meteorLoader = new GLTFLoader();
    for (let i = meteors.length; i < maxMeteors; i++){
-     meteorLoader.load("http://localhost:8080/meteor.gltf", function (gltf) {
+     meteorLoader.load("meteor.gltf", function (gltf) {
        const meteor = gltf.scene;
        meteor.position.set(null);
        meteor.rotation.set(Math.random()* 360 ,Math.random() * 360, Math.random()* 360);
@@ -118,7 +118,7 @@ function generateAlien(){
 
   for (let b = aliens.length; b < maxAliens; b++){
   const alienLoader = new GLTFLoader();
-    alienLoader.load("http://localhost:8080/alien.gltf", function (gltf) {
+    alienLoader.load("alien.gltf", function (gltf) {
       const alien = gltf.scene;
      // alien.position.set(Math.random() * 20 - 10, 20, 0);
       alien.position.set(null);
