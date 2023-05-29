@@ -8,8 +8,8 @@ let aliens = [];
 let bullets = [];
 
 
-const maxMeteors = 5; 
-const maxAliens = 2;
+const maxMeteors = 6; 
+const maxAliens = 3;
 
 const keys = {
   ArrowUp: false,
@@ -48,7 +48,6 @@ function init() {
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enabled = false;
 
-  
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
  
@@ -314,29 +313,30 @@ function handleKeyUp(event) {
 }
 
 function updateSpaceshipPosition() {
-  const speed = 0.1; // Movement speed
-  const tiltAngle = Math.PI / 12; // Tilt angle in radians
-  if (spaceship) {
-  if (keys.ArrowUp) {
-    spaceship.position.y += speed;
-  }
-  if (keys.ArrowDown) {
-    spaceship.position.y -= speed;
-  }
-  if (keys.ArrowLeft) {
-    spaceship.position.x -= speed;
-    spaceship.rotation.y = -tiltAngle; // Tilt the model to the left
-  }
-  if (keys.ArrowRight) {
-    spaceship.position.x += speed;
-    spaceship.rotation.y = tiltAngle; // Tilt the model to the right
-  }
+  const speed = 0.1; // Скорость перемещения
+  const tiltAngle = Math.PI / 12; // Угол наклона в радианах
 
-  // Reset the tilt when no arrow keys are pressed
-  if (!keys.ArrowLeft && !keys.ArrowRight) {
-    spaceship.rotation.y = 0;
+  if (spaceship) {
+    if (keys.ArrowUp && spaceship.position.y < 9) {
+      spaceship.position.y += speed;
+    }
+    if (keys.ArrowDown && spaceship.position.y > -9) {
+      spaceship.position.y -= speed;
+    }
+    if (keys.ArrowLeft && spaceship.position.x > -18) {
+      spaceship.position.x -= speed;
+      spaceship.rotation.y = -tiltAngle; // Наклоняем модель влево
+    }
+    if (keys.ArrowRight && spaceship.position.x < 18) {
+      spaceship.position.x += speed;
+      spaceship.rotation.y = tiltAngle; // Наклоняем модель вправо
+    }
+
+    // Сбрасываем наклон, когда не нажата ни одна из клавиш-стрелок
+    if (!keys.ArrowLeft && !keys.ArrowRight) {
+      spaceship.rotation.y = 0;
+    }
   }
-}
 }
 let lastGenerationTime = 0;
 let currentMeteorIndex = 0;
@@ -350,7 +350,7 @@ function reGeneration() {
         const meteor = meteors[currentMeteorIndex];
         if (meteor.position.x === null) {
           meteor.position.y -=0.2;
-          meteor.position.set(Math.random() * 20 - 10, 20, 0);
+          meteor.position.set(Math.random() * 30 - 15, 20, 0);
           meteor.rotation.set(Math.random() * 360, Math.random() * 360, Math.random() * 360);
           currentMeteorIndex++;
         }
@@ -361,7 +361,7 @@ function reGeneration() {
         const alien = aliens[currentAlienIndex];
         if (alien.position.x === null) {
           alien.position.y -=0.1;
-          alien.position.set(Math.random() * 20 - 10, 20, 0);
+          alien.position.set(Math.random() * 30 - 15, 20, 0);
           alien.rotation.set(0, 0, Math.PI);
           currentAlienIndex++;
         }
