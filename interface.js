@@ -20,9 +20,7 @@ function updateScore(bonus) {
 
 // Функция отрисовки счёта
 function drawScore() {
-
   ctx.fillStyle = 'white';
-  
   if (spaceshipHP<=0) {
     ctx.font = '80px Orbitron';
     ctx.fillText('Your score: ' + score, canvasOverlay.width / 2, canvasOverlay.height / 2 + 90);
