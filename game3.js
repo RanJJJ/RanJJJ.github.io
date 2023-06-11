@@ -80,7 +80,7 @@ function generateSpaceship() {
     spaceship = gltf.scene;
     spaceship.position.set(0,(-6), 0);
     spaceship.scale.set(1, 1, 1);
-    spaceship.hp = 100;
+    spaceship.hp = 30;
     scene.add(spaceship);
 
 // Получите анимации из glTF
