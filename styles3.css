@@ -22,8 +22,8 @@ html, body {
 }
 
 #game-container {
-  width: 120vh; /* Укажите желаемую ширину контейнера */
-  height: 67.25vh; /* Укажите желаемую высоту контейнера */
+  width: 120vh;
+  height: 67.25vh;
   margin: 0 auto;
   position: relative;
   overflow: hidden;
@@ -42,7 +42,7 @@ html, body {
 .left-image,
 .right-image {
   max-width: 20%;
-  max-height: 68vh; /* Измените это значение по необходимости */
+  max-height: 68vh;
 }
 
 .left-image{

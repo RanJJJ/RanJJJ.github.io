@@ -13,12 +13,12 @@ function initInterface() {
   ctx = canvasOverlay.getContext('2d');
 }
 
-
-
+// Функция обновления счёта
 function updateScore(bonus) {
   score = bonus + score;
 }
 
+// Функция отрисовки счёта
 function drawScore() {
 
   ctx.fillStyle = 'white';
@@ -32,12 +32,12 @@ function drawScore() {
   }
 }
 
-
+// Функция обновления здоровья
 function updateSpaceshipHP() {
   spaceshipHP -= 10;
 }
 
-
+// Функция отрисовки здоровья игрока
 function drawPlayerHP() {
   ctx.font = '24px Orbitron';
   ctx.fillStyle = 'white';
@@ -49,7 +49,7 @@ function drawPlayerHP() {
   }
 }
 
-
+// Функция интерфейса в конце игры
 function gameOverInt() {
   ctx.font = '130px Orbitron';
   ctx.fillStyle = 'white';
@@ -60,13 +60,11 @@ function gameOverInt() {
   ctx.fillText('Press f5 to restart', canvasOverlay.width / 2,canvasOverlay.height / 2 + 190);
 }
 
-
+// Функция обновления пройденой дистанции
 function drawDistance(){
   dist += 1;
-  
-  
   ctx.fillStyle = 'white';
-
+  
   if (spaceshipHP<=0) {
     if(one == true){
     lastDist = dist; 
